@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metronome</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: #1a1a1a;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 40px;
+            color: #ffffff;
+            font-weight: 300;
+            letter-spacing: 2px;
+        }
+
+        .visualization {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            height: 100px;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: #0f0f0f;
+            border-radius: 12px;
+        }
+
+        .beat-dot {
+            width: 20px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+            transition: all 0.1s ease;
+        }
+
+        .beat-dot.active {
+            background: #00ff88;
+            box-shadow: 0 0 20px #00ff88;
+            transform: scale(1.5);
+        }
+
+        .beat-dot.accent {
+            width: 24px;
+            height: 24px;
+        }
+
+        .beat-dot.accent.active {
+            background: #ff0066;
+            box-shadow: 0 0 25px #ff0066;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        label {
+            font-size: 0.9em;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+
+        .input-display {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #2a2a2a;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px #00ff88;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #00ff88;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .value-display {
+            min-width: 80px;
+            text-align: center;
+            font-size: 1.5em;
+            font-weight: 300;
+            color: #ffffff;
+            background: #0f0f0f;
+            padding: 8px 16px;
+            border-radius: 8px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f0f0f;
+            color: #ffffff;
+            border: 1px solid #333;
+            border-radius: 8px;
+            font-size: 1.1em;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        select:hover {
+            border-color: #00ff88;
+        }
+
+        select:focus {
+            border-color: #00ff88;
+        }
+
+        .play-button {
+            width: 100%;
+            padding: 18px;
+            background: #00ff88;
+            color: #0a0a0a;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .play-button:hover {
+            background: #00dd77;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0, 255, 136, 0.3);
+        }
+
+        .play-button:active {
+            transform: translateY(0);
+        }
+
+        .play-button.playing {
+            background: #ff0066;
+        }
+
+        .play-button.playing:hover {
+            background: #dd0055;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>METRONOME</h1>
+
+        <div class="visualization" id="visualization">
+            <!-- Beat dots will be generated here -->
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="tempo">Tempo (BPM)</label>
+                <div class="input-display">
+                    <input type="range" id="tempo" min="40" max="240" value="120">
+                    <div class="value-display" id="tempoValue">120</div>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label for="timeSignature">Time Signature</label>
+                <select id="timeSignature">
+                    <option value="2">2/4</option>
+                    <option value="3">3/4</option>
+                    <option value="4" selected>4/4</option>
+                    <option value="5">5/4</option>
+                    <option value="6">6/8</option>
+                    <option value="7">7/8</option>
+                </select>
+            </div>
+
+            <button class="play-button" id="playButton">Play</button>
+        </div>
+    </div>
+
+    <script>
+        const tempoSlider = document.getElementById('tempo');
+        const tempoValue = document.getElementById('tempoValue');
+        const timeSignature = document.getElementById('timeSignature');
+        const playButton = document.getElementById('playButton');
+        const visualization = document.getElementById('visualization');
+
+        let isPlaying = false;
+        let currentBeat = 0;
+        let intervalId = null;
+        let audioContext = null;
+
+        // Update tempo display
+        tempoSlider.addEventListener('input', (e) => {
+            tempoValue.textContent = e.target.value;
+            if (isPlaying) {
+                stopMetronome();
+                startMetronome();
+            }
+        });
+
+        // Update visualization when time signature changes
+        timeSignature.addEventListener('change', () => {
+            createVisualization();
+            if (isPlaying) {
+                currentBeat = 0;
+            }
+        });
+
+        // Create beat dots based on time signature
+        function createVisualization() {
+            const beats = parseInt(timeSignature.value);
+            visualization.innerHTML = '';
+            
+            for (let i = 0; i < beats; i++) {
+                const dot = document.createElement('div');
+                dot.className = i === 0 ? 'beat-dot accent' : 'beat-dot';
+                dot.dataset.beat = i;
+                visualization.appendChild(dot);
+            }
+        }
+
+        // Initialize visualization
+        createVisualization();
+
+        // Play/Stop button
+        playButton.addEventListener('click', () => {
+            if (isPlaying) {
+                stopMetronome();
+            } else {
+                startMetronome();
+            }
+        });
+
+        function startMetronome() {
+            isPlaying = true;
+            playButton.textContent = 'Stop';
+            playButton.classList.add('playing');
+            currentBeat = 0;
+
+            // Initialize audio context
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            const tempo = parseInt(tempoSlider.value);
+            const interval = (60 / tempo) * 1000; // Convert BPM to milliseconds
+
+            // Play first beat immediately
+            playBeat();
+
+            // Set up interval for subsequent beats
+            intervalId = setInterval(() => {
+                playBeat();
+            }, interval);
+        }
+
+        function stopMetronome() {
+            isPlaying = false;
+            playButton.textContent = 'Play';
+            playButton.classList.remove('playing');
+            
+            if (intervalId) {
+                clearInterval(intervalId);
+                intervalId = null;
+            }
+
+            // Clear all active beats
+            document.querySelectorAll('.beat-dot').forEach(dot => {
+                dot.classList.remove('active');
+            });
+        }
+
+        function playBeat() {
+            const beats = parseInt(timeSignature.value);
+            const dots = document.querySelectorAll('.beat-dot');
+
+            // Remove previous active state
+            dots.forEach(dot => dot.classList.remove('active'));
+
+            // Activate current beat
+            if (dots[currentBeat]) {
+                dots[currentBeat].classList.add('active');
+            }
+
+            // Play sound
+            playSound(currentBeat === 0);
+
+            // Move to next beat
+            currentBeat = (currentBeat + 1) % beats;
+        }
+
+        function playSound(isAccent) {
+            if (!audioContext) return;
+
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            // Accent (first beat) is higher pitch and louder
+            oscillator.frequency.value = isAccent ? 1000 : 800;
+            gainNode.gain.value = isAccent ? 0.3 : 0.15;
+
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+
+            // Fade out
+            gainNode.gain.exponentialRampToValueAtTime(
+                0.01,
+                audioContext.currentTime + 0.1
+            );
+        }
+    </script>
+</body>
+</html>
